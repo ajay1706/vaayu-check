@@ -12,6 +12,20 @@ class Vaayu extends StatefulWidget {
 
 class _VaayuState extends State<Vaayu> {
 
+String _cityEntered;
+
+  Future _goToNextScreen(BuildContext context) async {
+    Map results = await Navigator.of(context).push(
+      new MaterialPageRoute<Map>(  builder: (BuildContext context) => new ChangeCity())
+    );
+
+    if(results != null && results.containsKey('enter')){
+
+_cityEntered = results['enter'];
+    }
+
+  }
+
   void showStuff() async{
     Map data = await getWeather(util.appId, util.defaultCity);
     print(data.toString());
@@ -32,7 +46,9 @@ class _VaayuState extends State<Vaayu> {
 
           new IconButton(
             icon:new  Icon(Icons.menu),
-          onPressed: showStuff,
+          onPressed: () {
+              _goToNextScreen(context);
+          },
           ),
      ],
       ),
@@ -51,7 +67,7 @@ new Center(
   new Container(
     alignment: Alignment.topRight,
     margin: const EdgeInsets.fromLTRB(0.0,11.0,21.0,0.0),
-    child: new Text("Hyderabad",
+    child: new Text("${_cityEntered==null ? util.defaultCity : _cityEntered} ",
     style:cityStyle() ,),
   ),
   new Container(
@@ -61,8 +77,8 @@ new Center(
     child: new Image.asset("images/light_rain.png")
   ),
   new Container(
-    margin: const EdgeInsets.fromLTRB(30.0,500.0,0.0,0.0),
-    child: updateTempWidget("hyderabad"),
+    margin: const EdgeInsets.fromLTRB(135.0,500.0,0.0,0.0),
+    child: updateTempWidget(_cityEntered),
   ),
 
 
@@ -83,40 +99,107 @@ return json.decode(response.body);
 
   }
 
-Widget updateTempWidget(String city){
+  updateTempWidget(String city) {
 
     return new FutureBuilder(
-
-      builder: (BuildContext context,AsyncSnapshot<Map> snapshot){
-
-        if(snapshot.hasData){
-
-          Map content = snapshot.data;
-          return new Container(
-
-            child: new Column(
-
-              children: <Widget>[
-
-                new ListTile(
-
-                  title: new Text(content['main']['tmep'].toString()),
-
-                )
+      future: getWeather(util.appId, city==null ? util.defaultCity : city ),
+      builder: (BuildContext context, AsyncSnapshot<Map> snapshot){
 
 
-              ],
-            ),
-          );
+        if(snapshot.hasData)
+          {
+            Map content = snapshot.data;
+            return new Container(
+child: new Column(
 
+  children: <Widget>[
+
+    ListTile(
+      title: new Text(content['main']['temp'].toString(),
+      style: tempStyle(),),
+    )
+
+  ],
+),
+
+
+            );
+
+
+          }
+
+
+      else {
+        return new Container();
         }
-
-
       },
+
+
     );
-}
+
+  }
 
 }
+
+
+class ChangeCity extends StatelessWidget {
+
+  var _cityFieldController = new TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: new AppBar(
+        title: new Text("Change city"),
+        centerTitle: true,
+        backgroundColor: Colors.black54,
+      ),
+
+      body: new Stack(
+       children: <Widget>[
+         new Center(
+    child: new Image.asset("images/white_snow.png",
+    width: 400.0,
+    height: 1200.0,
+    fit: BoxFit.fill,),
+    ),
+    new ListView(
+    children: <Widget>[
+      new ListTile(
+    title: new TextField(
+    decoration: new InputDecoration(
+    hintText: "Enter your city"
+    ),
+    controller: _cityFieldController,
+    keyboardType: TextInputType.text,
+    ),
+
+    ),
+    new ListTile(
+    title: new FlatButton(
+    onPressed: (){
+      Navigator.pop(context, {
+        'enter' : _cityFieldController.text
+      });
+    },
+    textColor: Colors.white70,
+    color: Colors.black54,
+    child: new Text("Submit"),
+    ),
+    )
+    ],
+    )
+    ],
+
+    ),);
+  }
+}
+
+
+
+
+
+
 
 TextStyle cityStyle(){
   return new TextStyle(
